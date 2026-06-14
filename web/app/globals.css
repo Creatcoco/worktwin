@@ -1,0 +1,156 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bg: #06070d;
+  --color-bg-soft: #0c0e1a;
+  --color-surface: #121524;
+  --color-surface-2: #1a1f33;
+  --color-border: #232a44;
+  --color-fg: #e7ebf5;
+  --color-fg-muted: #9aa3bd;
+  --color-fg-dim: #646c87;
+  --color-primary: #7c5cff;
+  --color-primary-soft: #a48bff;
+  --color-accent: #22d3ee;
+  --color-accent-2: #f472b6;
+  --color-success: #34d399;
+  --color-warning: #fbbf24;
+  --color-danger: #f87171;
+
+  --font-sans: var(--font-geist-sans), system-ui, -apple-system, "PingFang SC",
+    "Microsoft YaHei", sans-serif;
+  --font-mono: var(--font-geist-mono), "SF Mono", Consolas, monospace;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body {
+  background: var(--color-bg);
+  color: var(--color-fg);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* 全局背景光晕 */
+body {
+  background-image:
+    radial-gradient(60rem 60rem at 80% -10%, rgba(124, 92, 255, 0.18), transparent 60%),
+    radial-gradient(50rem 50rem at -10% 30%, rgba(34, 211, 238, 0.12), transparent 60%),
+    radial-gradient(40rem 40rem at 50% 110%, rgba(244, 114, 182, 0.1), transparent 60%);
+  background-attachment: fixed;
+  min-height: 100vh;
+}
+
+/* 滚动条 */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: #2a3252;
+  border-radius: 8px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #3a456f;
+}
+
+/* 通用卡片：玻璃拟态 */
+.glass {
+  background: linear-gradient(
+    180deg,
+    rgba(26, 31, 51, 0.72) 0%,
+    rgba(18, 21, 36, 0.72) 100%
+  );
+  border: 1px solid var(--color-border);
+  backdrop-filter: blur(12px);
+}
+
+.glass-hover {
+  transition: all 0.2s ease;
+}
+.glass-hover:hover {
+  border-color: var(--color-primary);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 40px -12px rgba(124, 92, 255, 0.4);
+}
+
+/* 渐变文字 */
+.gradient-text {
+  background: linear-gradient(120deg, #a48bff 0%, #22d3ee 50%, #f472b6 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* 发光按钮 */
+.btn-glow {
+  background: linear-gradient(120deg, #7c5cff 0%, #22d3ee 100%);
+  box-shadow: 0 8px 24px -8px rgba(124, 92, 255, 0.6);
+  transition: all 0.2s ease;
+}
+.btn-glow:hover {
+  box-shadow: 0 12px 32px -8px rgba(124, 92, 255, 0.8);
+  transform: translateY(-1px);
+}
+
+/* 通用 input/select/textarea 工具类 */
+.input {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  font-size: 0.875rem;
+  outline: none;
+  color: var(--color-fg);
+}
+.input:focus {
+  border-color: var(--color-primary);
+}
+
+/* 状态徽章 */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+/* 动画 */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+.animate-pulse-glow {
+  animation: pulse-glow 2.5s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(124, 92, 255, 0.15) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 3s linear infinite;
+}
