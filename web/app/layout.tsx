@@ -4,6 +4,10 @@ import "./globals.css";
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
 import { LanguageProvider } from "@/lib/i18n";
+import { AuthProvider } from "@/lib/auth";
+import RouteGuard from "@/components/RouteGuard";
+import { ProductDataProvider } from "@/lib/product-data";
+import ProductDataBoundary from "@/components/ProductDataBoundary";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -16,10 +20,24 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "WorkTwin · 你的工作分身",
+  title: "WorkTwin · 你下班，你的分身继续上班",
   description:
-    "把你的专业技能镜像成一名 7×24 在岗的数字员工 · 一键接入 OpenClaw / Hermes / Cursor / Claude，让分身替你接单赚钱。",
+    "把你的专业技能镜像成可雇佣、可派单、可结算的工作分身。让分身 7×24 在岗接单，你只管做更有价值的事。",
   metadataBase: new URL("https://worktwin.cn"),
+  openGraph: {
+    title: "WorkTwin · 你下班，你的分身继续上班",
+    description:
+      "把技能变成资产，让工作分身替你接单、交付、结算。",
+    url: "https://worktwin.cn",
+    siteName: "WorkTwin",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "WorkTwin · 你下班，你的分身继续上班",
+    description:
+      "把技能变成资产，让工作分身替你接单、交付、结算。",
+  },
 };
 
 export default function RootLayout({
@@ -34,9 +52,13 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         <LanguageProvider>
-          <Nav />
-          <main className="flex-1">{children}</main>
-          <Footer />
+          <AuthProvider>
+            <ProductDataProvider>
+              <Nav />
+              <main className="flex-1"><RouteGuard><ProductDataBoundary>{children}</ProductDataBoundary></RouteGuard></main>
+              <Footer />
+            </ProductDataProvider>
+          </AuthProvider>
         </LanguageProvider>
       </body>
     </html>

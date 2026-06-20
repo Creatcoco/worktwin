@@ -1,13 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { store, genId } from "@/lib/store";
+import Link from "next/link";
+import { store } from "@/lib/store";
 import PageHeader from "@/components/PageHeader";
 import { useI18n } from "@/lib/i18n";
 import type { TaskOrder } from "@/types";
 
 export default function DispatchPage() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const myContracts = store.contracts.filter((c) => c.employerId === store.currentUserId);
   const onDutyEmployees = myContracts.map((c) => store.employees.find((e) => e.id === c.employeeId)).filter(Boolean) as typeof store.employees;
 
@@ -16,34 +17,27 @@ export default function DispatchPage() {
   const [priority, setPriority] = useState<"low" | "normal" | "high">("normal");
   const [deadline, setDeadline] = useState(3);
   const [tasks, setTasks] = useState<TaskOrder[]>(() => store.tasks.filter((tk) => tk.assignerId === store.currentUserId));
+  const [error, setError] = useState("");
 
-  const assign = () => {
-    if (!brief.trim() || !assigneeId) return;
-    const emp = store.employees.find((e) => e.id === assigneeId);
-    const contract = myContracts.find((c) => c.employeeId === assigneeId);
-    if (!emp || !contract) return;
-    const task: TaskOrder = {
-      id: genId("t"), contractId: contract.id, assignerId: store.currentUserId, assignerName: "demo",
-      assigneeEmployeeId: emp.id, assigneeName: emp.name, brief, priority,
-      deadline: Math.floor(Date.now() / 1000) + deadline * 86400, status: "queued", createdAt: Math.floor(Date.now() / 1000),
-    };
-    store.tasks.unshift(task);
-    contract.metrics.assigned += 1;
-    setTasks([...store.tasks.filter((tk) => tk.assignerId === store.currentUserId)]);
-    setBrief("");
+  const assign = async () => {
+    setError("");
+    try {
+      await store.createTask({ assigneeEmployeeId: assigneeId, brief, priority, deadlineDays: deadline });
+      setTasks([...store.tasks.filter((tk) => tk.assignerId === store.currentUserId)]);
+      setBrief("");
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : (lang === "zh" ? "派单失败，请稍后重试。" : "Dispatch failed. Try again later."));
+    }
   };
 
-  const advance = (id: string) => {
-    const tk = store.tasks.find((x) => x.id === id);
-    if (!tk) return;
-    const flow: Record<string, string> = { queued: "running", running: "review", review: "done" };
-    tk.status = flow[tk.status] as TaskOrder["status"];
-    if (tk.status === "done") {
-      tk.result = "✅";
-      const c = store.contracts.find((x) => x.id === tk.contractId);
-      if (c) c.metrics.completed += 1;
+  const advance = async (id: string) => {
+    setError("");
+    try {
+      await store.advanceTask(id);
+      setTasks([...store.tasks.filter((x) => x.assignerId === store.currentUserId)]);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : (lang === "zh" ? "任务推进失败。" : "Task update failed."));
     }
-    setTasks([...store.tasks.filter((x) => x.assignerId === store.currentUserId)]);
   };
 
   return (
@@ -61,7 +55,7 @@ export default function DispatchPage() {
             <div className="text-4xl mb-3">🤝</div>
             <h2 className="font-bold mb-2">{t("dispatch.noOnDuty")}</h2>
             <p className="text-sm text-[var(--color-fg-muted)] mb-4">{t("dispatch.noOnDutyDesc")}</p>
-            <a href="/market" className="btn-glow inline-block px-5 py-2 rounded-lg text-sm font-medium text-white">{t("dispatch.goMarket")}</a>
+            <Link href="/market" className="btn-glow inline-block px-5 py-2 rounded-lg text-sm font-medium text-white">{t("dispatch.goMarket")}</Link>
           </div>
         ) : (
           <>
@@ -88,7 +82,8 @@ export default function DispatchPage() {
                   <input type="number" min={1} value={deadline} onChange={(e) => setDeadline(Number(e.target.value))} className="w-full px-3 py-2 rounded-lg bg-[var(--color-surface)] border border-[var(--color-border)] text-sm outline-none focus:border-[var(--color-primary)]" />
                 </label>
               </div>
-              <button onClick={assign} disabled={!brief.trim()} className="btn-glow w-full py-2.5 rounded-xl text-sm font-medium text-white disabled:opacity-40">{t("dispatch.send")}</button>
+              <button onClick={() => void assign()} disabled={!brief.trim()} className="btn-glow w-full py-2.5 rounded-xl text-sm font-medium text-white disabled:opacity-40">{t("dispatch.send")}</button>
+              {error && <p className="mt-3 text-xs text-[var(--color-danger)]">{error}</p>}
             </section>
 
             <section className="glass rounded-2xl p-6">
@@ -114,7 +109,7 @@ export default function DispatchPage() {
                         </div>
                         {tk.result && <div className="mt-2 p-2 rounded-lg bg-[var(--color-bg)] text-xs text-[var(--color-success)]">{tk.result}</div>}
                         {tk.status !== "done" && (
-                          <button onClick={() => advance(tk.id)} className="mt-3 px-3 py-1 rounded-lg text-xs bg-[var(--color-surface-2)] hover:bg-[var(--color-primary)] hover:text-white transition-colors">{t("dispatch.advance")}</button>
+                          <button onClick={() => void advance(tk.id)} className="mt-3 px-3 py-1 rounded-lg text-xs bg-[var(--color-surface-2)] hover:bg-[var(--color-primary)] hover:text-white transition-colors">{t("dispatch.advance")}</button>
                         )}
                       </div>
                     );

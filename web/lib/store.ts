@@ -1,4 +1,6 @@
 import type {
+  CapabilityKind,
+  Currency,
   DigitalEmployee,
   EmploymentContract,
   TaskOrder,
@@ -6,6 +8,8 @@ import type {
   User,
   Capability,
   IntegrationDraft,
+  PlatformKind,
+  PricingModel,
 } from '@/types';
 
 // ===================================================================
@@ -373,6 +377,17 @@ export const seedDrafts: IntegrationDraft[] = [];
 
 // ---------- 内存存储（重启重置） ----------
 
+async function dataAction<T>(action: string, payload: Record<string, unknown>): Promise<T> {
+  const response = await fetch('/api/data/action', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action, payload }),
+  });
+  const result = await response.json() as T & { message?: string };
+  if (!response.ok) throw new Error(result.message || '业务数据写入失败');
+  return result;
+}
+
 class Store {
   employees: DigitalEmployee[] = [...seedEmployees];
   users: User[] = [...seedUsers];
@@ -383,6 +398,168 @@ class Store {
 
   /** 当前登录用户 ID（mock：单用户演示） */
   currentUserId = 'u_demo';
+
+  hydrateRemoteSnapshot(snapshot: {
+    employees: DigitalEmployee[];
+    user?: User;
+    contracts?: EmploymentContract[];
+    tasks?: TaskOrder[];
+    settlements?: Settlement[];
+    drafts?: IntegrationDraft[];
+  }) {
+    this.employees = snapshot.employees;
+    if (snapshot.user) {
+      const existingIndex = this.users.findIndex((item) => item.id === snapshot.user?.id);
+      if (existingIndex >= 0) this.users[existingIndex] = snapshot.user;
+      else this.users.push(snapshot.user);
+      this.currentUserId = snapshot.user.id;
+      this.contracts = snapshot.contracts || [];
+      this.tasks = snapshot.tasks || [];
+      this.settlements = snapshot.settlements || [];
+      this.drafts = snapshot.drafts || [];
+    }
+  }
+
+  activateAuthenticatedUser(input: { id: string; email: string; name: string }): User {
+    let user = this.users.find((item) => item.id === input.id);
+    if (!user) {
+      user = {
+        id: input.id,
+        name: input.name,
+        email: input.email,
+        avatar: '👤',
+        apiKey: '',
+        balanceCNY: 1000,
+        balanceUT: 50,
+        createdAt: this.nowSeconds(),
+      };
+      this.users.push(user);
+    } else {
+      user.name = input.name;
+      user.email = input.email;
+    }
+    this.currentUserId = input.id;
+    return user;
+  }
+
+  nowSeconds() {
+    return Math.floor(Date.now() / 1000);
+  }
+
+  async hireEmployee(employeeId: string): Promise<EmploymentContract> {
+    const { contract } = await dataAction<{ contract: EmploymentContract }>('hireEmployee', { employeeId });
+    const index = this.contracts.findIndex((item) => item.id === contract.id);
+    if (index >= 0) this.contracts[index] = contract;
+    else this.contracts.unshift(contract);
+    const employee = this.employees.find((item) => item.id === employeeId);
+    if (employee) employee.status = 'hired';
+    return contract;
+  }
+
+  async setContractStatus(contractId: string, status: EmploymentContract['status']): Promise<boolean> {
+    const { contract } = await dataAction<{ contract: EmploymentContract }>('setContractStatus', { contractId, status });
+    const index = this.contracts.findIndex((item) => item.id === contract.id);
+    if (index >= 0) this.contracts[index] = contract;
+    return true;
+  }
+
+  async setEmployeeStatus(employeeId: string, status: DigitalEmployee['status']): Promise<boolean> {
+    const { employee } = await dataAction<{ employee: DigitalEmployee }>('setEmployeeStatus', { employeeId, status });
+    const index = this.employees.findIndex((item) => item.id === employee.id);
+    if (index >= 0) this.employees[index] = employee;
+    return true;
+  }
+
+  async rotateApiKey(): Promise<string> {
+    const { apiKey } = await dataAction<{ apiKey: string }>('rotateApiKey', {});
+    const user = this.users.find((item) => item.id === this.currentUserId);
+    if (user) user.apiKey = apiKey;
+    return apiKey;
+  }
+
+  async createTask(input: {
+    assigneeEmployeeId: string;
+    brief: string;
+    priority: TaskOrder['priority'];
+    deadlineDays: number;
+  }): Promise<TaskOrder> {
+    const contract = this.contracts.find(
+      (c) =>
+        c.employeeId === input.assigneeEmployeeId &&
+        c.employerId === this.currentUserId &&
+        c.status === 'active'
+    );
+    if (!contract) throw new Error('找不到可用的雇佣合同');
+    const { task } = await dataAction<{ task: TaskOrder }>('createTask', {
+      contractId: contract.id,
+      brief: input.brief,
+      priority: input.priority,
+      deadlineDays: input.deadlineDays,
+    });
+    this.tasks.unshift(task);
+    contract.metrics.assigned += 1;
+    return task;
+  }
+
+  async advanceTask(taskId: string): Promise<TaskOrder> {
+    const result = await dataAction<{
+      task: TaskOrder;
+      settlement?: Settlement;
+      wallet?: User;
+      contract?: EmploymentContract;
+    }>('advanceTask', { taskId });
+    const index = this.tasks.findIndex((item) => item.id === result.task.id);
+    if (index >= 0) this.tasks[index] = result.task;
+    if (result.settlement && !this.settlements.some((item) => item.id === result.settlement?.id)) this.settlements.unshift(result.settlement);
+    if (result.wallet) {
+      const userIndex = this.users.findIndex((item) => item.id === result.wallet?.id);
+      if (userIndex >= 0) this.users[userIndex] = result.wallet;
+    }
+    if (result.contract) {
+      const contractIndex = this.contracts.findIndex((item) => item.id === result.contract?.id);
+      if (contractIndex >= 0) this.contracts[contractIndex] = result.contract;
+    }
+    const task = result.task;
+    return task;
+  }
+
+  async publishIntegration(input: {
+    platform: PlatformKind;
+    selectedCapabilities: Array<{
+      id: string;
+      kind: CapabilityKind;
+      name: string;
+      desc: string;
+      category: string;
+    }>;
+    name: string;
+    role: string;
+    bio: string;
+    pricingModel: PricingModel;
+    rate: number;
+    currency: Currency;
+  }): Promise<DigitalEmployee> {
+    const capabilities: Capability[] = input.selectedCapabilities.map((c) => ({
+      id: c.id,
+      kind: c.kind,
+      name: c.name,
+      description: c.desc,
+      category: c.category,
+    }));
+    const { employee, draft } = await dataAction<{ employee: DigitalEmployee; draft: IntegrationDraft }>('publishIntegration', {
+      platform: input.platform,
+      capabilities,
+      name: input.name,
+      role: input.role,
+      bio: input.bio,
+      pricingModel: input.pricingModel,
+      rate: input.rate,
+      currency: input.currency,
+    });
+    this.employees.unshift(employee);
+    this.drafts.unshift(draft);
+    return employee;
+  }
 
   reset() {
     this.employees = [...seedEmployees];

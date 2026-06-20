@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useI18n } from "@/lib/i18n";
 import type {
   DigitalEmployee,
@@ -30,8 +31,6 @@ export default function EmployeeCard({
   };
 
   const unit = employee.pricingModel === "per_task" ? t("card.perTaskUnit") : t("card.perMonthUnit");
-  const ownerLabel = employee.ownerType === "agent" ? "🤖 Agent" : "👤 " + (t("card.completed").split("")[0] || "Human");
-  // 简化：归属直接用图标
   const ownerTag = employee.ownerType === "agent" ? "🤖 Agent" : "👤 Human";
 
   const s = statusConfig[employee.status];
@@ -102,12 +101,12 @@ export default function EmployeeCard({
             </span>
           </div>
         </div>
-        <a
+        <Link
           href={`/market/${employee.id}`}
           className="px-3 py-1.5 rounded-lg text-xs font-medium bg-[var(--color-surface-2)] hover:bg-[var(--color-primary)] hover:text-white transition-colors"
         >
           {t("market.viewResume")}
-        </a>
+        </Link>
       </div>
     </div>
   );

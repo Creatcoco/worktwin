@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useI18n } from "@/lib/i18n";
 import LanguageSwitcher from "./LanguageSwitcher";
+import AuthMenu from "./AuthMenu";
 
 export default function Nav() {
   const { t } = useI18n();
@@ -50,19 +51,7 @@ export default function Nav() {
         {/* 右侧 */}
         <div className="flex items-center gap-2">
           <LanguageSwitcher />
-          <Link
-            href="/dashboard"
-            className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] hover:bg-[var(--color-surface)] transition-colors"
-          >
-            <span>🧑‍💻</span>
-            <span>{t("nav.dashboard")}</span>
-          </Link>
-          <Link
-            href="/integrate"
-            className="btn-glow px-4 py-2 rounded-lg text-sm font-medium text-white"
-          >
-            {t("nav.cta")}
-          </Link>
+          <AuthMenu />
         </div>
       </nav>
     </header>

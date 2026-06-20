@@ -3,7 +3,7 @@
 import { use, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { store, genId } from "@/lib/store";
+import { store } from "@/lib/store";
 import PageHeader from "@/components/PageHeader";
 import { useI18n } from "@/lib/i18n";
 import type { PricingModel } from "@/types";
@@ -15,9 +15,19 @@ export default function EmployeeDetailPage({
 }) {
   const { id } = use(params);
   const router = useRouter();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const employee = store.employees.find((e) => e.id === id);
-  const [hired, setHired] = useState(false);
+  const [hireError, setHireError] = useState("");
+  const [hired, setHired] = useState(() =>
+    Boolean(
+      store.contracts.find(
+        (c) =>
+          c.employeeId === id &&
+          c.employerId === store.currentUserId &&
+          c.status === "active"
+      )
+    )
+  );
 
   if (!employee) {
     return (
@@ -37,21 +47,17 @@ export default function EmployeeDetailPage({
     subscription: t("card.subscription"),
   };
 
-  const hire = () => {
-    store.contracts.unshift({
-      id: genId("c"),
-      employerId: store.currentUserId,
-      employerName: "demo",
-      employeeId: employee.id,
-      employeeName: employee.name,
-      terms: { type: employee.pricingModel, amount: employee.rate, currency: employee.currency, durationDays: 30 },
-      status: "active",
-      startedAt: Math.floor(Date.now() / 1000),
-      metrics: { assigned: 0, completed: 0, rating: 0, earnings: 0 },
-    });
-    employee.status = "hired";
-    setHired(true);
+  const hire = async () => {
+    setHireError("");
+    try {
+      await store.hireEmployee(employee.id);
+      setHired(true);
+    } catch (error) {
+      setHireError(error instanceof Error ? error.message : (lang === "zh" ? "雇佣失败，请稍后重试。" : "Hiring failed. Try again later."));
+    }
   };
+
+  const isOwner = employee.ownerId === store.currentUserId;
 
   return (
     <div>
@@ -98,15 +104,20 @@ export default function EmployeeDetailPage({
                 {employee.rate}
                 <span className="text-sm text-[var(--color-fg-muted)] ml-1">{employee.currency}</span>
               </div>
-              {hired ? (
+              {isOwner ? (
+                <Link href="/studio" className="mt-3 inline-block px-4 py-2 rounded-lg text-xs font-medium bg-[var(--color-surface-2)] hover:bg-[var(--color-primary)] hover:text-white transition-colors">
+                  {lang === "zh" ? "管理我的分身" : "Manage my twin"}
+                </Link>
+              ) : hired ? (
                 <Link href="/dispatch" className="mt-3 inline-block px-4 py-2 rounded-lg text-xs font-medium bg-[var(--color-success)] text-white">
                   {t("detail.hired")}
                 </Link>
               ) : (
-                <button onClick={hire} className="btn-glow mt-3 px-4 py-2 rounded-lg text-xs font-medium text-white">
+                <button onClick={() => void hire()} disabled={employee.status === "offline"} className="btn-glow mt-3 px-4 py-2 rounded-lg text-xs font-medium text-white disabled:opacity-40">
                   {t("detail.hire")}
                 </button>
               )}
+              {hireError && <p className="mt-2 max-w-48 text-xs text-[var(--color-danger)]">{hireError}</p>}
             </div>
           </div>
         </div>

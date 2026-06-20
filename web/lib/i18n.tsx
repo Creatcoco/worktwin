@@ -191,12 +191,12 @@ const dict: Dict = {
   "integrate.stepCompose": { zh: "组装员工", en: "Compose" },
   "integrate.stepConnected": { zh: "上架", en: "Live" },
   "integrate.stepSelectDesc": { zh: "选定连接器", en: "Choose a connector" },
-  "integrate.stepAuthDesc": { zh: "Device Auth 绑定", en: "Device Auth binding" },
-  "integrate.stepDiscoverDesc": { zh: "tools/list 同步", en: "tools/list sync" },
+  "integrate.stepAuthDesc": { zh: "绑定 / 鉴权", en: "Bind / auth" },
+  "integrate.stepDiscoverDesc": { zh: "能力目录同步", en: "Capability catalog sync" },
   "integrate.stepComposeDesc": { zh: "勾选 + 人设 + 定价", en: "Select + persona + pricing" },
   "integrate.stepConnectedDesc": { zh: "生成数字员工", en: "Spawn twin" },
   "integrate.recommended": { zh: "推荐", en: "Recommended" },
-  "integrate.connectOpenclaw": { zh: "Device Auth 扫码绑定", en: "Device Auth QR binding" },
+  "integrate.connectOpenclaw": { zh: "Gateway URL + Token", en: "Gateway URL + token" },
   "integrate.connectHermes": { zh: "Device Auth + platform_type", en: "Device Auth + platform_type" },
   "integrate.connectCursor": { zh: "本地配置注入", en: "Local config injection" },
   "integrate.connectClaude": { zh: "桌面配置文件", en: "Desktop config file" },
@@ -239,7 +239,7 @@ const dict: Dict = {
   "studio.templates": { zh: "从模板创建", en: "From template" },
   "studio.templatesDesc": { zh: "预设人设 + 能力组合，一键生成数字员工", en: "Preset persona + capability bundle, one-click spawn" },
   "studio.newFromIntegrate": { zh: "+ 接入新能力生成员工", en: "+ Connect capabilities to spawn a twin" },
-  "studio.allTwins": { zh: "全部数字员工", en: "All twins" },
+  "studio.allTwins": { zh: "我的数字员工", en: "My twins" },
   "studio.detail": { zh: "详情", en: "Detail" },
 
   // ---- Dashboard ----
@@ -377,8 +377,8 @@ const dict: Dict = {
   },
   "docs.openclaw": { zh: "OpenClaw 接入（推荐）", en: "OpenClaw (recommended)" },
   "docs.openclawDesc": {
-    zh: "首选 Agent 接入方式 — 3 分钟完成 Device Auth 绑定、Skill Pack 导入与 MCP 全量工具对接。",
-    en: "Preferred agent integration — Device Auth, Skill Pack import and full MCP tooling in 3 minutes.",
+    zh: "首选 Agent 接入方式 — 连接 OpenClaw Gateway，导入 Agent / Tool / Skill 能力目录。",
+    en: "Preferred agent integration — connect OpenClaw Gateway and import Agent / Tool / Skill catalogs.",
   },
   "docs.hermes": { zh: "Hermes Agent 接入", en: "Hermes Agent" },
   "docs.hermesDesc": {
@@ -446,26 +446,31 @@ const I18nContext = createContext<I18nValue | null>(null);
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const [lang, setLangState] = useState<Lang>("zh");
 
-  // 初始化：localStorage > navigator.language > zh
   useEffect(() => {
-    const stored = localStorage.getItem("worktwin-lang") as Lang | null;
-    if (stored === "zh" || stored === "en") {
-      setLangState(stored);
-      return;
-    }
-    const nav = navigator.language?.toLowerCase() ?? "";
-    if (nav.startsWith("en")) setLangState("en");
+    const timeout = window.setTimeout(() => {
+      const stored = localStorage.getItem("worktwin-lang") as Lang | null;
+      const browserLang = navigator.language?.toLowerCase() ?? "";
+      const preferred = stored === "zh" || stored === "en"
+        ? stored
+        : browserLang.startsWith("en") ? "en" : "zh";
+      document.documentElement.lang = preferred;
+      setLangState(preferred);
+    }, 0);
+    return () => window.clearTimeout(timeout);
   }, []);
 
-  // 同步 <html lang> 与 localStorage
-  useEffect(() => {
-    document.documentElement.lang = lang;
-    localStorage.setItem("worktwin-lang", lang);
-  }, [lang]);
-
-  const setLang = useCallback((l: Lang) => setLangState(l), []);
+  const setLang = useCallback((next: Lang) => {
+    setLangState(next);
+    document.documentElement.lang = next;
+    localStorage.setItem("worktwin-lang", next);
+  }, []);
   const toggle = useCallback(
-    () => setLangState((p) => (p === "zh" ? "en" : "zh")),
+    () => setLangState((previous) => {
+      const next = previous === "zh" ? "en" : "zh";
+      document.documentElement.lang = next;
+      localStorage.setItem("worktwin-lang", next);
+      return next;
+    }),
     []
   );
 

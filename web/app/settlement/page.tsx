@@ -5,18 +5,23 @@ import PageHeader from "@/components/PageHeader";
 import { useI18n } from "@/lib/i18n";
 
 export default function SettlementPage() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const user = getCurrentUser();
   const settlements = store.settlements;
 
   const totalCNY = settlements.filter((s) => s.currency === "CNY").reduce((sum, s) => sum + s.amount, 0);
   const totalUT = settlements.filter((s) => s.currency === "UT").reduce((sum, s) => sum + s.amount, 0);
+  const totalsForType = (type: "salary" | "per_task" | "subscription") => ({
+    CNY: settlements.filter((s) => s.type === type && s.currency === "CNY").reduce((sum, s) => sum + s.amount, 0),
+    UT: settlements.filter((s) => s.type === type && s.currency === "UT").reduce((sum, s) => sum + s.amount, 0),
+  });
   const byType = {
-    salary: settlements.filter((s) => s.type === "salary").reduce((a, b) => a + b.amount, 0),
-    per_task: settlements.filter((s) => s.type === "per_task").reduce((a, b) => a + b.amount, 0),
-    subscription: settlements.filter((s) => s.type === "subscription").reduce((a, b) => a + b.amount, 0),
+    salary: totalsForType("salary"),
+    per_task: totalsForType("per_task"),
+    subscription: totalsForType("subscription"),
   };
   const recent = [...settlements].sort((a, b) => b.createdAt - a.createdAt).slice(0, 7);
+  const ledger = [...settlements].sort((a, b) => b.createdAt - a.createdAt);
   const maxAmount = Math.max(...recent.map((s) => s.amount), 1);
 
   return (
@@ -51,9 +56,9 @@ export default function SettlementPage() {
         <section className="glass rounded-2xl p-6 mb-6">
           <h2 className="font-semibold mb-4">{t("settlement.byModel")}</h2>
           <div className="grid sm:grid-cols-3 gap-4">
-            <BillingBar label={t("card.salary")} amount={byType.salary} total={totalCNY + totalUT} color="#22d3ee" />
-            <BillingBar label={t("card.perTask")} amount={byType.per_task} total={totalCNY + totalUT} color="#a48bff" />
-            <BillingBar label={t("card.subscription")} amount={byType.subscription} total={totalCNY + totalUT} color="#f472b6" />
+            <BillingBreakdown label={t("card.salary")} amounts={byType.salary} totalCNY={totalCNY} totalUT={totalUT} color="#22d3ee" />
+            <BillingBreakdown label={t("card.perTask")} amounts={byType.per_task} totalCNY={totalCNY} totalUT={totalUT} color="#a48bff" />
+            <BillingBreakdown label={t("card.subscription")} amounts={byType.subscription} totalCNY={totalCNY} totalUT={totalUT} color="#f472b6" />
           </div>
         </section>
 
@@ -82,7 +87,7 @@ export default function SettlementPage() {
                 </tr>
               </thead>
               <tbody>
-                {settlements.map((s) => (
+                {ledger.map((s) => (
                   <tr key={s.id} className="border-b border-[var(--color-border)] last:border-0">
                     <td className="py-3 pr-4">{s.description}</td>
                     <td className="py-3 pr-4 text-xs text-[var(--color-fg-muted)]">{s.type === "salary" ? t("card.salary") : s.type === "per_task" ? t("card.perTask") : t("card.subscription")}</td>
@@ -94,7 +99,7 @@ export default function SettlementPage() {
                     <td className="py-3 pr-4 text-right font-bold">
                       <span style={{ color: s.currency === "CNY" ? "#34d399" : "#a48bff" }}>{s.amount} {s.currency}</span>
                     </td>
-                    <td className="py-3 text-right text-xs text-[var(--color-fg-dim)]">{new Date(s.createdAt * 1000).toLocaleDateString()}</td>
+                    <td className="py-3 text-right text-xs text-[var(--color-fg-dim)]">{formatDate(s.createdAt, lang)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -106,18 +111,39 @@ export default function SettlementPage() {
   );
 }
 
-function BillingBar({ label, amount, total, color }: { label: string; amount: number; total: number; color: string }) {
-  const pct = total > 0 ? Math.round((amount / total) * 100) : 0;
+function formatDate(timestamp: number, lang: "zh" | "en") {
+  return new Intl.DateTimeFormat(lang === "zh" ? "zh-CN" : "en-US", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    timeZone: "Asia/Shanghai",
+  }).format(new Date(timestamp * 1000));
+}
+
+function BillingBreakdown({ label, amounts, totalCNY, totalUT, color }: { label: string; amounts: { CNY: number; UT: number }; totalCNY: number; totalUT: number; color: string }) {
+  const cnyPct = totalCNY > 0 ? Math.round((amounts.CNY / totalCNY) * 100) : 0;
+  const utPct = totalUT > 0 ? Math.round((amounts.UT / totalUT) * 100) : 0;
+  return (
+    <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+      <div className="text-sm font-medium mb-3">{label}</div>
+      <div className="space-y-3">
+        <CurrencyBar label="CNY" amount={amounts.CNY} percent={cnyPct} color="#34d399" />
+        <CurrencyBar label="UT" amount={amounts.UT} percent={utPct} color={color} />
+      </div>
+    </div>
+  );
+}
+
+function CurrencyBar({ label, amount, percent, color }: { label: string; amount: number; percent: number; color: string }) {
   return (
     <div>
       <div className="flex justify-between text-xs mb-1.5">
-        <span className="text-[var(--color-fg-muted)]">{label}</span>
-        <span style={{ color }}>{pct}%</span>
+        <span className="text-[var(--color-fg-muted)]">{label} · {amount.toLocaleString()}</span>
+        <span style={{ color }}>{percent}%</span>
       </div>
-      <div className="h-2 rounded-full bg-[var(--color-surface)] overflow-hidden">
-        <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: color }} />
+      <div className="h-1.5 rounded-full bg-[var(--color-bg)] overflow-hidden">
+        <div className="h-full rounded-full transition-all" style={{ width: `${percent}%`, background: color }} />
       </div>
-      <div className="text-xs text-[var(--color-fg-dim)] mt-1">¥{amount.toLocaleString()}</div>
     </div>
   );
 }

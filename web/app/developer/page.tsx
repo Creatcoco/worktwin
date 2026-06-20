@@ -18,16 +18,25 @@ const endpoints = [
 ];
 
 export default function DeveloperPage() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const user = getCurrentUser();
   const [showKey, setShowKey] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [rotated, setRotated] = useState(false);
 
   const copyKey = () => {
     if (!user) return;
     navigator.clipboard?.writeText(user.apiKey);
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
+  };
+
+  const rotateKey = async () => {
+    await store.rotateApiKey();
+    setShowKey(false);
+    setCopied(false);
+    setRotated(true);
+    setTimeout(() => setRotated(false), 2000);
   };
 
   const docLinks = [
@@ -51,9 +60,14 @@ export default function DeveloperPage() {
       <div className="max-w-5xl mx-auto px-6 py-8 space-y-6">
         {/* API Key */}
         <section className="glass rounded-2xl p-6">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between gap-3 mb-4">
             <h2 className="font-semibold">{t("developer.apiCreds")}</h2>
-            <span className="badge" style={{ color: "#a48bff", background: "rgba(124,92,255,0.12)" }}>{t("developer.agentPath")}</span>
+            <div className="flex items-center gap-2">
+              <button onClick={() => void rotateKey()} className="px-3 py-1.5 rounded-lg text-xs border border-[var(--color-border)] hover:border-[var(--color-primary)] transition-colors">
+                {rotated ? (lang === "zh" ? "已轮换" : "Rotated") : (lang === "zh" ? "轮换密钥" : "Rotate key")}
+              </button>
+              <span className="badge" style={{ color: "#a48bff", background: "rgba(124,92,255,0.12)" }}>{t("developer.agentPath")}</span>
+            </div>
           </div>
           <p className="text-xs text-[var(--color-fg-muted)] mb-4">{t("developer.apiKeyDesc")}</p>
           <div className="space-y-3">

@@ -1,0 +1,24 @@
+{
+  "app_id": "cli_xxxxxxxxxxxxxxxx",
+  "app_secret": "replace_me",
+  "tenant_access_token": "",
+  "app_token": "bascnxxxxxxxxxxxxxxx",
+  "table_id": "tbl_users_xxxxxxxxx",
+  "tables": {
+    "users": "tbl_users_xxxxxxxxx",
+    "wallets": "",
+    "employees": "",
+    "capabilities": "",
+    "employeeCapabilities": "",
+    "platformBindings": "",
+    "integrationSessions": "",
+    "contracts": "",
+    "tasks": "",
+    "settlements": "",
+    "reviews": "",
+    "apiKeys": "",
+    "webhooks": "",
+    "auditLogs": ""
+  },
+  "session_secret": "replace_with_at_least_32_random_characters"
+}

@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useI18n } from "@/lib/i18n";
 
 interface PageHeaderProps {
   title: string;
@@ -18,7 +17,6 @@ export default function PageHeader({
   actions,
   breadcrumbs,
 }: PageHeaderProps) {
-  const { t } = useI18n();
   return (
     <div className="border-b border-[var(--color-border)] bg-[rgba(12,14,26,0.5)]">
       <div className="max-w-7xl mx-auto px-6 py-8">

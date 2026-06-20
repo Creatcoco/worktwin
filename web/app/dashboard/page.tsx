@@ -1,20 +1,42 @@
 "use client";
 
+import { useState } from "react";
 import { store, getCurrentUser } from "@/lib/store";
 import PageHeader from "@/components/PageHeader";
 import { useI18n } from "@/lib/i18n";
 import Link from "next/link";
 
 export default function DashboardPage() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
+  const [, setVersion] = useState(0);
   const user = getCurrentUser();
   const myContracts = store.contracts.filter((c) => c.employerId === store.currentUserId);
   const myTasks = store.tasks.filter((t2) => t2.assignerId === store.currentUserId);
   const myEmployees = store.employees.filter((e) => e.ownerId === store.currentUserId);
   const earnings = store.settlements.filter((s) => s.callerType === "human").reduce((sum, s) => sum + s.amount, 0);
+  const completedTasks = myTasks.filter((task) => task.status === "done").length;
+  const completionRate = myTasks.length ? Math.round((completedTasks / myTasks.length) * 100) : 0;
+  const bindings = myEmployees.flatMap((employee) => employee.bindings);
+  const connectedBindings = bindings.filter((binding) => binding.state === "connected").length;
+  const connectionRate = bindings.length ? Math.round((connectedBindings / bindings.length) * 100) : 0;
+  const reviewCount = myTasks.filter((task) => task.status === "review").length;
+  const settledContracts = new Set(store.settlements.map((settlement) => settlement.contractId));
+  const completedContractIds = new Set(myTasks.filter((task) => task.status === "done").map((task) => task.contractId));
+  const settlementCoverage = completedContractIds.size
+    ? Math.round((Array.from(completedContractIds).filter((id) => settledContracts.has(id)).length / completedContractIds.size) * 100)
+    : 0;
 
   const taskCount = (status: string) => myTasks.filter((tk) => tk.status === status).length;
   const statusColors: Record<string, string> = { queued: "#646c87", running: "#22d3ee", review: "#fbbf24", done: "#34d399", rejected: "#f87171" };
+  const toggleContract = async (contractId: string, currentStatus: "active" | "paused" | "ended") => {
+    if (currentStatus === "ended") return;
+    try {
+      await store.setContractStatus(contractId, currentStatus === "active" ? "paused" : "active");
+      setVersion((value) => value + 1);
+    } catch {
+      return;
+    }
+  };
 
   return (
     <div>
@@ -33,6 +55,46 @@ export default function DashboardPage() {
           <StatCard label={t("dashboard.onDuty")} value={myContracts.length} suffix="" color="#22d3ee" />
           <StatCard label={t("dashboard.totalSpend")} value={earnings.toLocaleString()} suffix="¥" color="#fbbf24" />
         </div>
+
+        <section className="glass rounded-2xl p-6 mb-6">
+          <div className="flex items-start justify-between gap-4 mb-5 flex-wrap">
+            <div>
+              <h2 className="font-semibold">{lang === "zh" ? "商业运营健康" : "Commercial operations health"}</h2>
+              <p className="text-xs text-[var(--color-fg-dim)] mt-1">
+                {lang === "zh" ? "履约、连接器、验收与结算四个上线关键指标。" : "Launch-critical fulfillment, connector, review and settlement signals."}
+              </p>
+            </div>
+            <Link href="/settlement" className="text-xs text-[var(--color-primary-soft)]">
+              {lang === "zh" ? "查看结算流水 →" : "View settlements →"}
+            </Link>
+          </div>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <OperationMetric
+              label={lang === "zh" ? "任务履约率" : "Fulfillment rate"}
+              value={`${completionRate}%`}
+              detail={`${completedTasks}/${myTasks.length} ${lang === "zh" ? "任务完成" : "tasks completed"}`}
+              color={completionRate >= 80 ? "#34d399" : "#fbbf24"}
+            />
+            <OperationMetric
+              label={lang === "zh" ? "连接器在线率" : "Connector availability"}
+              value={`${connectionRate}%`}
+              detail={`${connectedBindings}/${bindings.length} ${lang === "zh" ? "绑定正常" : "bindings healthy"}`}
+              color={connectionRate >= 95 ? "#34d399" : "#22d3ee"}
+            />
+            <OperationMetric
+              label={lang === "zh" ? "待验收" : "Pending review"}
+              value={reviewCount.toString()}
+              detail={lang === "zh" ? "需确认交付质量" : "deliverables need review"}
+              color={reviewCount === 0 ? "#34d399" : "#fbbf24"}
+            />
+            <OperationMetric
+              label={lang === "zh" ? "自动结算覆盖" : "Auto-settlement coverage"}
+              value={`${settlementCoverage}%`}
+              detail={lang === "zh" ? "已完成合同自动入账" : "completed contracts settled"}
+              color={settlementCoverage >= 95 ? "#34d399" : "#a48bff"}
+            />
+          </div>
+        </section>
 
         <div className="grid lg:grid-cols-2 gap-6 mb-6">
           <section className="glass rounded-2xl p-6">
@@ -53,9 +115,16 @@ export default function DashboardPage() {
                         <div className="text-sm font-medium">{c.employeeName}</div>
                         <div className="text-xs text-[var(--color-fg-dim)]">{c.metrics.completed}/{c.metrics.assigned} · ★ {c.metrics.rating}</div>
                       </div>
-                      <span className="badge" style={{ color: c.status === "active" ? "#34d399" : "#fbbf24", background: c.status === "active" ? "rgba(52,211,153,0.12)" : "rgba(251,191,36,0.12)" }}>
-                        {c.status === "active" ? t("card.hired") : t("card.offline")}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="badge" style={{ color: c.status === "active" ? "#34d399" : "#fbbf24", background: c.status === "active" ? "rgba(52,211,153,0.12)" : "rgba(251,191,36,0.12)" }}>
+                          {c.status === "active" ? t("card.hired") : t("card.offline")}
+                        </span>
+                        {c.status !== "ended" && (
+                          <button onClick={() => void toggleContract(c.id, c.status)} className="px-2 py-1 rounded-md text-[11px] bg-[var(--color-surface-2)] hover:bg-[var(--color-primary)] hover:text-white transition-colors">
+                            {c.status === "active" ? (lang === "zh" ? "暂停" : "Pause") : (lang === "zh" ? "恢复" : "Resume")}
+                          </button>
+                        )}
+                      </div>
                     </div>
                   );
                 })}
@@ -135,6 +204,16 @@ function MiniStat({ label, value, color }: { label: string; value: number; color
     <div className="p-3 rounded-xl bg-[var(--color-surface)] text-center">
       <div className="text-xl font-bold" style={{ color }}>{value}</div>
       <div className="text-xs text-[var(--color-fg-dim)] mt-0.5">{label}</div>
+    </div>
+  );
+}
+
+function OperationMetric({ label, value, detail, color }: { label: string; value: string; detail: string; color: string }) {
+  return (
+    <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+      <div className="text-xs text-[var(--color-fg-dim)]">{label}</div>
+      <div className="text-2xl font-bold mt-2" style={{ color }}>{value}</div>
+      <div className="text-xs text-[var(--color-fg-muted)] mt-1">{detail}</div>
     </div>
   );
 }

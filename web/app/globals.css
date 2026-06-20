@@ -37,9 +37,10 @@ body {
 /* 全局背景光晕 */
 body {
   background-image:
-    radial-gradient(60rem 60rem at 80% -10%, rgba(124, 92, 255, 0.18), transparent 60%),
-    radial-gradient(50rem 50rem at -10% 30%, rgba(34, 211, 238, 0.12), transparent 60%),
-    radial-gradient(40rem 40rem at 50% 110%, rgba(244, 114, 182, 0.1), transparent 60%);
+    radial-gradient(58rem 58rem at 78% -10%, rgba(124, 92, 255, 0.16), transparent 62%),
+    radial-gradient(48rem 48rem at -8% 28%, rgba(34, 211, 238, 0.11), transparent 62%),
+    radial-gradient(38rem 38rem at 52% 112%, rgba(244, 114, 182, 0.09), transparent 64%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent 28rem);
   background-attachment: fixed;
   min-height: 100vh;
 }
@@ -121,6 +122,69 @@ body {
   font-size: 11px;
   font-weight: 500;
   line-height: 1.4;
+}
+
+.badge-soft {
+  color: var(--color-fg-muted);
+  background: rgba(18, 21, 36, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.badge-bright {
+  color: #dff9ff;
+  background: rgba(34, 211, 238, 0.12);
+  border: 1px solid rgba(34, 211, 238, 0.24);
+}
+
+.hero-grid::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+  background-size: 72px 72px;
+  mask-image: linear-gradient(to bottom, black, transparent 72%);
+  pointer-events: none;
+}
+
+.share-card {
+  background:
+    linear-gradient(135deg, rgba(124, 92, 255, 0.18), transparent 34%),
+    linear-gradient(225deg, rgba(34, 211, 238, 0.14), transparent 36%),
+    linear-gradient(180deg, rgba(26, 31, 51, 0.9), rgba(9, 11, 20, 0.9));
+  box-shadow:
+    0 30px 80px -42px rgba(34, 211, 238, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.share-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(120deg, transparent 0%, rgba(255, 255, 255, 0.08) 45%, transparent 62%);
+  transform: translateX(-65%);
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.proposition-strip {
+  background:
+    linear-gradient(90deg, rgba(34, 211, 238, 0.13), rgba(124, 92, 255, 0.12), rgba(244, 114, 182, 0.1)),
+    rgba(18, 21, 36, 0.74);
+  backdrop-filter: blur(16px);
+  box-shadow: 0 18px 60px -44px rgba(34, 211, 238, 0.8);
+}
+
+.feature-card {
+  min-height: 260px;
+}
+
+.cta-panel {
+  background:
+    radial-gradient(44rem 26rem at 50% 0%, rgba(34, 211, 238, 0.16), transparent 60%),
+    linear-gradient(120deg, rgba(124, 92, 255, 0.2), rgba(244, 114, 182, 0.08), rgba(34, 211, 238, 0.14));
 }
 
 /* 动画 */
