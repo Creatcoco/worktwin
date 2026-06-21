@@ -5,9 +5,9 @@ import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
 import { LanguageProvider } from "@/lib/i18n";
 import { AuthProvider } from "@/lib/auth";
-import RouteGuard from "@/components/RouteGuard";
 import { ProductDataProvider } from "@/lib/product-data";
 import ProductDataBoundary from "@/components/ProductDataBoundary";
+import GuestModeBanner from "@/components/GuestModeBanner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -55,7 +55,8 @@ export default function RootLayout({
           <AuthProvider>
             <ProductDataProvider>
               <Nav />
-              <main className="flex-1"><RouteGuard><ProductDataBoundary>{children}</ProductDataBoundary></RouteGuard></main>
+              <GuestModeBanner />
+              <main className="flex-1"><ProductDataBoundary>{children}</ProductDataBoundary></main>
               <Footer />
             </ProductDataProvider>
           </AuthProvider>

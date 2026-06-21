@@ -2,14 +2,20 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { store } from "@/lib/store";
+import { seedEmployees, store } from "@/lib/store";
 import PageHeader from "@/components/PageHeader";
+import InlineLoginGate from "@/components/InlineLoginGate";
 import { useI18n } from "@/lib/i18n";
+import { useAuth } from "@/lib/auth";
 
 export default function StudioPage() {
   const { t, lang } = useI18n();
+  const { user } = useAuth();
   const [, setVersion] = useState(0);
-  const allEmployees = store.employees.filter((employee) => employee.ownerId === store.currentUserId);
+  const isGuest = !user;
+  const allEmployees = isGuest
+    ? seedEmployees.slice(0, 4)
+    : store.employees.filter((employee) => employee.ownerId === store.currentUserId);
 
   const toggleListing = async (employeeId: string, status: "available" | "hired" | "offline") => {
     const nextStatus = status === "offline" ? "available" : "offline";
@@ -37,7 +43,9 @@ export default function StudioPage() {
         </section>
 
         <section>
-          <h2 className="font-semibold mb-4">{t("studio.allTwins")} ({allEmployees.length})</h2>
+          <h2 className="font-semibold mb-4">
+            {isGuest ? (lang === "zh" ? "员工管理示例" : "Employee management preview") : t("studio.allTwins")} ({allEmployees.length})
+          </h2>
           {allEmployees.length === 0 ? (
             <div className="glass rounded-2xl p-10 text-center">
               <p className="text-sm text-[var(--color-fg-muted)]">{t("dashboard.emptyMine")}</p>
@@ -70,9 +78,13 @@ export default function StudioPage() {
                 <Link href={`/market/${e.id}`} className="px-3 py-1.5 rounded-lg text-xs bg-[var(--color-surface-2)] hover:bg-[var(--color-primary)] hover:text-white transition-colors">
                   {t("studio.detail")}
                 </Link>
-                <button onClick={() => void toggleListing(e.id, e.status)} className="px-3 py-1.5 rounded-lg text-xs border border-[var(--color-border)] hover:border-[var(--color-primary)] transition-colors">
-                  {e.status === "offline" ? (lang === "zh" ? "重新上架" : "Relist") : (lang === "zh" ? "下架" : "Unlist")}
-                </button>
+                <InlineLoginGate action={e.status === "offline" ? (lang === "zh" ? "重新上架" : "Relist") : (lang === "zh" ? "下架" : "Unlist")} onConfirm={() => void toggleListing(e.id, e.status)}>
+                  {(handleClick) => (
+                    <button onClick={handleClick} className="px-3 py-1.5 rounded-lg text-xs border border-[var(--color-border)] hover:border-[var(--color-primary)] transition-colors">
+                      {e.status === "offline" ? (lang === "zh" ? "重新上架" : "Relist") : (lang === "zh" ? "下架" : "Unlist")}
+                    </button>
+                  )}
+                </InlineLoginGate>
               </div>
               ))}
             </div>

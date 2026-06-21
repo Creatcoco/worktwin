@@ -217,6 +217,11 @@ async function createTask(session: { userId: string; name: string; email: string
   if (balance < contract.terms.amount) throw new Error("钱包余额不足");
 
   const createdAt = nowSeconds();
+  const role = text(payload.role);
+  const skillTagsValue = payload.skillTags;
+  const skillTags = Array.isArray(skillTagsValue)
+    ? skillTagsValue.filter((s): s is string => typeof s === "string")
+    : [];
   const task: TaskOrder = {
     id: id("task"),
     contractId: contract.id,
@@ -224,13 +229,20 @@ async function createTask(session: { userId: string; name: string; email: string
     assignerName: session.name,
     assigneeEmployeeId: contract.employeeId,
     assigneeName: contract.employeeName,
-    brief: text(payload.brief),
+    brief: text(payload.brief) || role,
+    role,
+    responsibilities: text(payload.responsibilities),
+    requirements: text(payload.requirements),
+    deliverables: text(payload.deliverables),
+    budget: number(payload.budget) || 0,
+    skillTags,
     priority: text(payload.priority) as TaskOrder["priority"],
     deadline: createdAt + Math.max(1, number(payload.deadlineDays)) * 86400,
     status: "queued",
     createdAt,
   };
-  if (!task.brief) throw new Error("任务描述不能为空");
+  if (!task.role) throw new Error("岗位名称不能为空");
+  if (!task.responsibilities) throw new Error("岗位职责不能为空");
   await saveTask(task);
   contract.metrics.assigned += 1;
   await saveContract(contract);

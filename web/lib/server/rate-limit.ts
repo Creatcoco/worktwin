@@ -1,7 +1,7 @@
 import "server-only";
 
 import type { NextRequest } from "next/server";
-import { getSession, type SessionClaims } from "./auth-security";
+import type { SessionClaims } from "./auth-security";
 
 type Bucket = { count: number; resetAt: number };
 

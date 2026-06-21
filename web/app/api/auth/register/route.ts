@@ -6,8 +6,10 @@ import {
   isValidPassword,
   normalizeEmail,
   setSession,
+  verifyPassword,
 } from "@/lib/server/auth-security";
-import { createUser, findUserByEmail } from "@/lib/server/feishu-users";
+import { verifyCaptcha } from "@/lib/server/captcha-store";
+import { createUser, findUserByEmail, updateLastLogin } from "@/lib/server/feishu-users";
 import { saveWallet } from "@/lib/server/feishu-product-repository";
 import { checkRateLimit, RATE_LIMIT_WINDOW_SECONDS, resolveRateLimitKey } from "@/lib/server/rate-limit";
 
@@ -42,11 +44,40 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // 滑块验证码校验（防机器人批量注册）
+  const captchaToken = typeof body.captchaToken === "string" ? body.captchaToken : "";
+  const captchaX = Number(body.captchaX);
+  if (!captchaToken || !verifyCaptcha(captchaToken, captchaX)) {
+    return NextResponse.json({ message: "请完成滑块验证", captchaInvalid: true }, { status: 400 });
+  }
+
   try {
-    if (await findUserByEmail(email)) {
-      return NextResponse.json({ message: "该邮箱已注册" }, { status: 409 });
+    // 已注册检测：邮箱存在时，用本次密码尝试登录，而非报错
+    const existing = await findUserByEmail(email);
+    if (existing) {
+      const valid = await verifyPassword(password, existing.passwordSalt, existing.passwordHash);
+      if (!valid || existing.status !== "active") {
+        return NextResponse.json(
+          { message: "该邮箱已注册，密码不正确", alreadyRegistered: true },
+          { status: 409 }
+        );
+      }
+      // 密码正确：直接登录（用户无需切换到登录页）
+      await updateLastLogin(existing);
+      const response = NextResponse.json({
+        mode: "signin",
+        user: { id: existing.userId, email: existing.email, name: existing.name, role: existing.role },
+      });
+      setSession(response, {
+        userId: existing.userId,
+        email: existing.email,
+        name: existing.name,
+        role: existing.role,
+      });
+      return response;
     }
 
+    // 新注册
     const credentials = await hashPassword(password);
     const user = await createUser({
       userId: `usr_${randomUUID().replaceAll("-", "")}`,
@@ -66,7 +97,7 @@ export async function POST(request: NextRequest) {
       createdAt: Math.floor(user.createdAt / 1000),
     });
     const response = NextResponse.json(
-      { user: { id: user.userId, email: user.email, name: user.name, role: user.role } },
+      { mode: "signup", user: { id: user.userId, email: user.email, name: user.name, role: user.role } },
       { status: 201 }
     );
     setSession(response, { userId: user.userId, email: user.email, name: user.name, role: user.role });

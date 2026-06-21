@@ -3,8 +3,10 @@
 import { useState } from "react";
 import { getCurrentUser, store } from "@/lib/store";
 import PageHeader from "@/components/PageHeader";
+import InlineLoginGate from "@/components/InlineLoginGate";
 import { useI18n } from "@/lib/i18n";
 import Link from "next/link";
+import { useAuth } from "@/lib/auth";
 
 const endpoints = [
   { method: "POST", path: "/integrations/sessions" },
@@ -19,6 +21,7 @@ const endpoints = [
 
 export default function DeveloperPage() {
   const { t, lang } = useI18n();
+  const { user: authUser } = useAuth();
   const user = getCurrentUser();
   const [showKey, setShowKey] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -63,9 +66,13 @@ export default function DeveloperPage() {
           <div className="flex items-center justify-between gap-3 mb-4">
             <h2 className="font-semibold">{t("developer.apiCreds")}</h2>
             <div className="flex items-center gap-2">
-              <button onClick={() => void rotateKey()} className="px-3 py-1.5 rounded-lg text-xs border border-[var(--color-border)] hover:border-[var(--color-primary)] transition-colors">
-                {rotated ? (lang === "zh" ? "已轮换" : "Rotated") : (lang === "zh" ? "轮换密钥" : "Rotate key")}
-              </button>
+              <InlineLoginGate action={lang === "zh" ? "轮换密钥" : "Rotate key"} onConfirm={() => void rotateKey()}>
+                {(handleClick) => (
+                  <button onClick={handleClick} className="px-3 py-1.5 rounded-lg text-xs border border-[var(--color-border)] hover:border-[var(--color-primary)] transition-colors">
+                    {rotated ? (lang === "zh" ? "已轮换" : "Rotated") : (lang === "zh" ? "轮换密钥" : "Rotate key")}
+                  </button>
+                )}
+              </InlineLoginGate>
               <span className="badge" style={{ color: "#a48bff", background: "rgba(124,92,255,0.12)" }}>{t("developer.agentPath")}</span>
             </div>
           </div>
@@ -74,14 +81,24 @@ export default function DeveloperPage() {
             <div>
               <div className="text-xs text-[var(--color-fg-dim)] mb-1">X-Api-Key</div>
               <div className="flex items-center gap-2 p-3 rounded-lg bg-[var(--color-bg)] border border-[var(--color-border)] font-mono text-sm">
-                <span className="flex-1 truncate text-[var(--color-accent)]">{showKey ? user?.apiKey : "sk_worktwin_••••••••••••••••"}</span>
-                <button onClick={() => setShowKey(!showKey)} className="px-2 py-1 rounded text-xs bg-[var(--color-surface-2)] hover:bg-[var(--color-surface)]">{showKey ? t("developer.hide") : t("developer.show")}</button>
-                <button onClick={copyKey} className="px-2 py-1 rounded text-xs bg-[var(--color-surface-2)] hover:bg-[var(--color-surface)]">{copied ? t("developer.copied") : t("developer.copy")}</button>
+                <span className="flex-1 truncate text-[var(--color-accent)]">{showKey && authUser ? user?.apiKey : "sk_worktwin_••••••••••••••••"}</span>
+                <InlineLoginGate action={t("developer.show")} onConfirm={() => setShowKey(!showKey)}>
+                  {(handleClick) => (
+                    <button onClick={handleClick} className="px-2 py-1 rounded text-xs bg-[var(--color-surface-2)] hover:bg-[var(--color-surface)]">{showKey ? t("developer.hide") : t("developer.show")}</button>
+                  )}
+                </InlineLoginGate>
+                <InlineLoginGate action={t("developer.copy")} onConfirm={copyKey}>
+                  {(handleClick) => (
+                    <button onClick={handleClick} className="px-2 py-1 rounded text-xs bg-[var(--color-surface-2)] hover:bg-[var(--color-surface)]">{copied ? t("developer.copied") : t("developer.copy")}</button>
+                  )}
+                </InlineLoginGate>
               </div>
             </div>
             <div>
               <div className="text-xs text-[var(--color-fg-dim)] mb-1">X-Platform-User-Id</div>
-              <div className="p-3 rounded-lg bg-[var(--color-bg)] border border-[var(--color-border)] font-mono text-sm text-[var(--color-accent)]">{user?.id}</div>
+              <div className="p-3 rounded-lg bg-[var(--color-bg)] border border-[var(--color-border)] font-mono text-sm text-[var(--color-accent)]">
+                {authUser ? user?.id : "user_xxxxxxxxx"}
+              </div>
             </div>
             <div className="text-xs text-[var(--color-fg-dim)]">{t("developer.humanPathNote")}</div>
           </div>

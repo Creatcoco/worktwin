@@ -220,6 +220,11 @@ export async function getTask(taskId: string): Promise<TaskOrder | null> {
 
 function mapTask(record: BitableRecord): TaskOrder {
   const fields = record.fields;
+  const roleText = text(fields.岗位名称) || text(fields.任务描述);
+  const skillTagsField = fields.技能标签;
+  const skillTags = Array.isArray(skillTagsField)
+    ? skillTagsField.filter((s): s is string => typeof s === "string")
+    : [];
   return {
     id: text(fields.任务ID),
     contractId: text(fields.合同ID),
@@ -227,7 +232,13 @@ function mapTask(record: BitableRecord): TaskOrder {
     assignerName: text(fields.派单人名称),
     assigneeEmployeeId: text(fields.员工ID),
     assigneeName: text(fields.员工名称),
-    brief: text(fields.任务描述),
+    brief: text(fields.任务描述) || roleText,
+    role: roleText,
+    responsibilities: text(fields.岗位职责),
+    requirements: text(fields.任职要求),
+    deliverables: text(fields.交付标准),
+    budget: number(fields.预算),
+    skillTags,
     priority: text(fields.优先级) as TaskOrder["priority"],
     deadline: seconds(fields.截止时间),
     status: text(fields.状态) as TaskOrder["status"],

@@ -319,7 +319,13 @@ export const seedTasks: TaskOrder[] = [
     assignerName: '演示用户',
     assigneeEmployeeId: 'emp_design_lily',
     assigneeName: '设计师 Lily',
-    brief: '把后台首页改成卡片式布局，强调核心指标。',
+    brief: '后台首页卡片式重设计',
+    role: '资深 UI 设计师',
+    responsibilities: '主导后台首页的视觉与信息架构设计\n强调核心业务指标，弱化次要信息\n输出高保真设计稿并配合前端落地',
+    requirements: '3 年以上 B 端后台设计经验\n熟练使用 Figma / Sketch\n具备数据可视化设计能力',
+    deliverables: '高保真首页设计稿 1 份\n设计规范文档 1 份\n3 轮免费修改',
+    budget: 1500,
+    skillTags: ['UI 设计', 'B 端后台', '数据可视化'],
     priority: 'high',
     deadline: now + 86400 * 2,
     status: 'running',
@@ -332,7 +338,13 @@ export const seedTasks: TaskOrder[] = [
     assignerName: '演示用户',
     assigneeEmployeeId: 'emp_design_lily',
     assigneeName: '设计师 Lily',
-    brief: '登录页视觉优化，目标提升转化率。',
+    brief: '登录页视觉优化',
+    role: '登录页视觉优化设计师',
+    responsibilities: '提升登录页转化率\n优化移动端与桌面端视觉一致性',
+    requirements: '熟悉登录注册流程的最佳实践\n具备转化率优化（CRO）经验',
+    deliverables: '登录页视觉优化方案 1 份\nA/B 测试对比稿 2 版',
+    budget: 800,
+    skillTags: ['视觉优化', 'CRO', '移动端'],
     priority: 'normal',
     deadline: now + 86400 * 5,
     status: 'queued',
@@ -479,7 +491,14 @@ class Store {
 
   async createTask(input: {
     assigneeEmployeeId: string;
-    brief: string;
+    brief?: string;
+    // 招聘 JD 格式需求
+    role: string;
+    responsibilities: string;
+    requirements: string;
+    deliverables: string;
+    budget: number;
+    skillTags: string[];
     priority: TaskOrder['priority'];
     deadlineDays: number;
   }): Promise<TaskOrder> {
@@ -492,7 +511,13 @@ class Store {
     if (!contract) throw new Error('找不到可用的雇佣合同');
     const { task } = await dataAction<{ task: TaskOrder }>('createTask', {
       contractId: contract.id,
-      brief: input.brief,
+      brief: input.brief ?? input.role,
+      role: input.role,
+      responsibilities: input.responsibilities,
+      requirements: input.requirements,
+      deliverables: input.deliverables,
+      budget: input.budget,
+      skillTags: input.skillTags,
       priority: input.priority,
       deadlineDays: input.deadlineDays,
     });

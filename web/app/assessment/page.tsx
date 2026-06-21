@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import InlineLoginGate from "@/components/InlineLoginGate";
 import PageHeader from "@/components/PageHeader";
 import { useI18n } from "@/lib/i18n";
 
@@ -182,7 +183,11 @@ export default function AssessmentPage() {
               <div className="text-xs text-[var(--color-fg-dim)] mt-1">{t("assessment.coreSkill")}<strong className="text-[var(--color-fg)]">{topTag}</strong></div>
             </div>
             <div className="flex flex-col sm:flex-row gap-2">
-              <button onClick={() => router.push("/integrate")} className="btn-glow flex-1 py-2.5 rounded-xl text-sm font-medium text-white">{t("assessment.useResult")}</button>
+              <InlineLoginGate action={t("assessment.useResult")} onConfirm={() => router.push("/integrate")}>
+                {(handleClick) => (
+                  <button onClick={handleClick} className="btn-glow flex-1 py-2.5 rounded-xl text-sm font-medium text-white">{t("assessment.useResult")}</button>
+                )}
+              </InlineLoginGate>
               <button onClick={() => { setStep(0); setAnswers([]); setDone(false); }} className="px-4 py-2.5 rounded-xl text-sm bg-[var(--color-surface)] hover:bg-[var(--color-surface-2)]">{t("assessment.retake")}</button>
             </div>
           </div>

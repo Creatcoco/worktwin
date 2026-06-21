@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { store } from "@/lib/store";
 import PageHeader from "@/components/PageHeader";
+import InlineLoginGate from "@/components/InlineLoginGate";
 import { useI18n } from "@/lib/i18n";
 import type { CapabilityKind, PlatformKind, IntegrationState, PricingModel, Currency, DigitalEmployee } from "@/types";
 
@@ -664,7 +665,11 @@ POST ${customConfig.callbackUrl}`}
             </div>
             <div className="flex items-center justify-between mt-6 pt-4 border-t border-[var(--color-border)]">
               <button onClick={() => setState("discovering")} className="text-sm text-[var(--color-fg-muted)] hover:text-[var(--color-fg)]">{t("integrate.reselect")}</button>
-              <button onClick={() => void publish()} disabled={!form.name || !form.role} className="btn-glow px-6 py-2 rounded-lg text-sm font-medium text-white disabled:opacity-40">{t("integrate.publish")}</button>
+              <InlineLoginGate action={t("integrate.publish")} onConfirm={() => void publish()}>
+                {(handleClick) => (
+                  <button onClick={handleClick} disabled={!form.name || !form.role} className="btn-glow px-6 py-2 rounded-lg text-sm font-medium text-white disabled:opacity-40">{t("integrate.publish")}</button>
+                )}
+              </InlineLoginGate>
             </div>
             {publishError && <p className="mt-3 text-xs text-[var(--color-danger)]">{publishError}</p>}
           </div>

@@ -1,40 +1,17 @@
 "use client";
 
-import { useEffect, type ReactNode } from "react";
-import { usePathname, useRouter } from "next/navigation";
-import { useAuth } from "@/lib/auth";
+import type { ReactNode } from "react";
 
-const protectedPrefixes = [
-  "/dashboard",
-  "/developer",
-  "/dispatch",
-  "/integrate",
-  "/settlement",
-  "/studio",
-];
-
+/**
+ * 路由守卫壳。
+ *
+ * 历史上这里会拦截未登录用户并跳转 /login。为了让游客也能浏览所有主要模块的
+ * 演示内容，已移除硬跳转逻辑：所有页面均可进入，写操作由各页内的
+ * InlineLoginGate 组件做轻量内联拦截（点击时弹登录提示），后端 dataAction
+ * 仍以 401 兜底。
+ *
+ * 保留组件壳以兼容 layout.tsx 的引用，避免改动布局结构。
+ */
 export default function RouteGuard({ children }: { children: ReactNode }) {
-  const pathname = usePathname();
-  const router = useRouter();
-  const { user, loading } = useAuth();
-  const protectedRoute = protectedPrefixes.some((prefix) => pathname.startsWith(prefix));
-
-  useEffect(() => {
-    if (!loading && protectedRoute && !user) {
-      router.replace(`/login?next=${encodeURIComponent(pathname)}`);
-    }
-  }, [loading, pathname, protectedRoute, router, user]);
-
-  if (protectedRoute && (loading || !user)) {
-    return (
-      <div className="min-h-[55vh] flex items-center justify-center">
-        <div className="flex items-center gap-3 text-sm text-[var(--color-fg-muted)]">
-          <span className="w-2 h-2 rounded-full bg-[var(--color-primary)] animate-pulse-glow" />
-          正在验证登录状态...
-        </div>
-      </div>
-    );
-  }
-
-  return children;
+  return <>{children}</>;
 }

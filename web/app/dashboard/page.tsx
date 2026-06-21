@@ -1,26 +1,32 @@
 "use client";
 
 import { useState } from "react";
-import { store, getCurrentUser } from "@/lib/store";
+import { store, getCurrentUser, seedContracts, seedEmployees, seedSettlements, seedTasks, seedUsers } from "@/lib/store";
 import PageHeader from "@/components/PageHeader";
+import InlineLoginGate from "@/components/InlineLoginGate";
 import { useI18n } from "@/lib/i18n";
 import Link from "next/link";
+import { useAuth } from "@/lib/auth";
 
 export default function DashboardPage() {
   const { t, lang } = useI18n();
+  const { user: authUser } = useAuth();
   const [, setVersion] = useState(0);
-  const user = getCurrentUser();
-  const myContracts = store.contracts.filter((c) => c.employerId === store.currentUserId);
-  const myTasks = store.tasks.filter((t2) => t2.assignerId === store.currentUserId);
-  const myEmployees = store.employees.filter((e) => e.ownerId === store.currentUserId);
-  const earnings = store.settlements.filter((s) => s.callerType === "human").reduce((sum, s) => sum + s.amount, 0);
+  const isGuest = !authUser;
+  const user = isGuest ? seedUsers[0] : getCurrentUser();
+  const myContracts = isGuest ? seedContracts : store.contracts.filter((c) => c.employerId === store.currentUserId);
+  const myTasks = isGuest ? seedTasks : store.tasks.filter((t2) => t2.assignerId === store.currentUserId);
+  const employeeSource = isGuest ? seedEmployees : store.employees;
+  const myEmployees = isGuest ? seedEmployees.slice(0, 3) : employeeSource.filter((e) => e.ownerId === store.currentUserId);
+  const settlementSource = isGuest ? seedSettlements : store.settlements;
+  const earnings = settlementSource.filter((s) => s.callerType === "human").reduce((sum, s) => sum + s.amount, 0);
   const completedTasks = myTasks.filter((task) => task.status === "done").length;
   const completionRate = myTasks.length ? Math.round((completedTasks / myTasks.length) * 100) : 0;
   const bindings = myEmployees.flatMap((employee) => employee.bindings);
   const connectedBindings = bindings.filter((binding) => binding.state === "connected").length;
   const connectionRate = bindings.length ? Math.round((connectedBindings / bindings.length) * 100) : 0;
   const reviewCount = myTasks.filter((task) => task.status === "review").length;
-  const settledContracts = new Set(store.settlements.map((settlement) => settlement.contractId));
+  const settledContracts = new Set(settlementSource.map((settlement) => settlement.contractId));
   const completedContractIds = new Set(myTasks.filter((task) => task.status === "done").map((task) => task.contractId));
   const settlementCoverage = completedContractIds.size
     ? Math.round((Array.from(completedContractIds).filter((id) => settledContracts.has(id)).length / completedContractIds.size) * 100)
@@ -107,7 +113,7 @@ export default function DashboardPage() {
             ) : (
               <div className="space-y-3">
                 {myContracts.map((c) => {
-                  const emp = store.employees.find((e) => e.id === c.employeeId);
+                  const emp = employeeSource.find((e) => e.id === c.employeeId);
                   return (
                     <div key={c.id} className="flex items-center gap-3 p-3 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)]">
                       <div className="w-10 h-10 rounded-lg bg-[var(--color-surface-2)] flex items-center justify-center text-xl">{emp?.avatar || "🤖"}</div>
@@ -120,9 +126,13 @@ export default function DashboardPage() {
                           {c.status === "active" ? t("card.hired") : t("card.offline")}
                         </span>
                         {c.status !== "ended" && (
-                          <button onClick={() => void toggleContract(c.id, c.status)} className="px-2 py-1 rounded-md text-[11px] bg-[var(--color-surface-2)] hover:bg-[var(--color-primary)] hover:text-white transition-colors">
-                            {c.status === "active" ? (lang === "zh" ? "暂停" : "Pause") : (lang === "zh" ? "恢复" : "Resume")}
-                          </button>
+                          <InlineLoginGate action={c.status === "active" ? (lang === "zh" ? "暂停" : "Pause") : (lang === "zh" ? "恢复" : "Resume")} onConfirm={() => void toggleContract(c.id, c.status)}>
+                            {(handleClick) => (
+                              <button onClick={handleClick} className="px-2 py-1 rounded-md text-[11px] bg-[var(--color-surface-2)] hover:bg-[var(--color-primary)] hover:text-white transition-colors">
+                                {c.status === "active" ? (lang === "zh" ? "暂停" : "Pause") : (lang === "zh" ? "恢复" : "Resume")}
+                              </button>
+                            )}
+                          </InlineLoginGate>
                         )}
                       </div>
                     </div>

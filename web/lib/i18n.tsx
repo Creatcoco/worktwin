@@ -264,32 +264,56 @@ const dict: Dict = {
   "dashboard.done": { zh: "已完成", en: "Done" },
   "dashboard.noTasks": { zh: "暂无任务，去派单试试", en: "No tasks — try dispatching one" },
 
-  // ---- Dispatch ----
+  // ---- Dispatch（招聘 JD 格式需求单）----
   "dispatch.title": { zh: "任务派发中心", en: "Task Dispatch" },
   "dispatch.desc": {
-    zh: "自然语言派单，智能路由到在职数字员工。跟踪进度，验收成果。",
-    en: "Dispatch via natural language, auto-routed to on-duty twins. Track progress, review deliverables.",
+    zh: "像发布招聘需求一样写下岗位要求，指派给在职数字员工。跟踪进度，验收成果。",
+    en: "Post job requirements like a hiring brief, assign to on-duty twins. Track progress, review deliverables.",
   },
   "dispatch.noOnDuty": { zh: "还没有在职员工", en: "No on-duty twins" },
-  "dispatch.noOnDutyDesc": { zh: "先去雇佣市场雇佣一名数字员工，再来这里派活。", en: "Hire a twin in the marketplace first, then dispatch tasks." },
+  "dispatch.noOnDutyDesc": { zh: "先去雇佣市场雇佣一名数字员工，再来这里发布需求。", en: "Hire a twin in the marketplace first, then post requirements." },
   "dispatch.goMarket": { zh: "去雇佣 →", en: "Go hire →" },
-  "dispatch.newTask": { zh: "📝 派新任务", en: "📝 New task" },
+  "dispatch.newTask": { zh: "📝 发布需求", en: "📝 Post requirement" },
   "dispatch.assignTo": { zh: "指派给", en: "Assign to" },
   "dispatch.priority": { zh: "优先级", en: "Priority" },
   "dispatch.deadline": { zh: "期限（天）", en: "Deadline (days)" },
   "dispatch.pLow": { zh: "低", en: "Low" },
   "dispatch.pNormal": { zh: "中", en: "Normal" },
   "dispatch.pHigh": { zh: "高", en: "High" },
-  "dispatch.send": { zh: "派单 →", en: "Dispatch →" },
-  "dispatch.queue": { zh: "任务队列", en: "Task queue" },
-  "dispatch.empty": { zh: "还没有任务，上面派一单试试", en: "No tasks — dispatch one above" },
+  "dispatch.send": { zh: "发布需求 →", en: "Post requirement →" },
+  "dispatch.queue": { zh: "需求列表", en: "Requirements" },
+  "dispatch.empty": { zh: "还没有需求，上面发布一个试试", en: "No requirements — post one above" },
   "dispatch.advance": { zh: "推进到下一步 →", en: "Advance →" },
-  "dispatch.s.queued": { zh: "排队中", en: "Queued" },
-  "dispatch.s.running": { zh: "进行中", en: "Running" },
+  "dispatch.s.queued": { zh: "待开始", en: "Open" },
+  "dispatch.s.running": { zh: "进行中", en: "In progress" },
   "dispatch.s.review": { zh: "待验收", en: "Review" },
   "dispatch.s.done": { zh: "已完成", en: "Done" },
   "dispatch.s.rejected": { zh: "已驳回", en: "Rejected" },
-  "dispatch.briefPh": { zh: "用一句话描述你要做的事...（自然语言派单）", en: "Describe the job in one line... (natural language)" },
+  "dispatch.briefPh": { zh: "用一句话描述你要做的事...", en: "Describe the job in one line..." },
+  // 招聘 JD 字段
+  "dispatch.role": { zh: "岗位标题", en: "Role title" },
+  "dispatch.rolePh": { zh: "如：资深文案撰写", en: "e.g. Senior Copywriter" },
+  "dispatch.responsibilities": { zh: "岗位职责", en: "Responsibilities" },
+  "dispatch.responsibilitiesPh": { zh: "描述这个岗位要做什么，每行一条...", en: "What this role does, one per line..." },
+  "dispatch.requirements": { zh: "任职要求", en: "Requirements" },
+  "dispatch.requirementsPh": { zh: "需要具备的技能和经验，每行一条...", en: "Skills and experience needed, one per line..." },
+  "dispatch.deliverables": { zh: "交付标准", en: "Deliverables" },
+  "dispatch.deliverablesPh": { zh: "交付物和验收标准，每行一条...", en: "Deliverables and acceptance criteria, one per line..." },
+  "dispatch.skills": { zh: "技能标签", en: "Skill tags" },
+  "dispatch.skillsPh": { zh: "输入后回车添加", en: "Type and press Enter to add" },
+  "dispatch.budget": { zh: "预算（CNY）", en: "Budget (CNY)" },
+  "dispatch.budgetHint": { zh: "留空表示按合同计费", en: "Leave empty to bill per contract" },
+  "dispatch.byContract": { zh: "按合同", en: "Per contract" },
+  // 登录提示
+  "dispatch.loginRequired": { zh: "请先登录后发布需求", en: "Sign in to post requirements" },
+  "dispatch.loginRequiredDesc": { zh: "登录后即可像写招聘启事一样发布岗位需求，指派给你的数字员工。", en: "Sign in to post job requirements like a hiring brief and assign them to your twins." },
+  "dispatch.goLogin": { zh: "去登录 →", en: "Sign in →" },
+
+  // 通用游客内联登录提示（{action} 由调用方传入，如「发布需求」「雇佣」）
+  "guest.loginToAction": { zh: "登录后即可{action}", en: "Sign in to {action}" },
+  "guest.loginToActionDesc": { zh: "当前为演示模式，登录后即可进行此操作。", en: "You're in demo mode. Sign in to take this action." },
+  "guest.goLogin": { zh: "去登录 →", en: "Sign in →" },
+  "guest.cancel": { zh: "取消", en: "Cancel" },
 
   // ---- Settlement ----
   "settlement.title": { zh: "结算中心", en: "Settlement" },
@@ -308,6 +332,24 @@ const dict: Dict = {
   "settlement.col.path": { zh: "路径", en: "Path" },
   "settlement.col.amount": { zh: "金额", en: "Amount" },
   "settlement.col.time": { zh: "时间", en: "Time" },
+
+  // 结算游客介绍模式（未登录时展示结算机制说明）
+  "settlement.guestBadge": { zh: "演示模式", en: "Demo mode" },
+  "settlement.guestTitle": { zh: "结算中心怎么运作", en: "How the Settlement Center works" },
+  "settlement.guestLead": { zh: "登录后这里会显示你的真实钱包余额、计费明细和完整流水。先了解一下结算机制：", en: "Sign in to see your real wallet balances, billing breakdown and full ledger. First, here's how settlement works:" },
+  "settlement.guestCta": { zh: "登录查看我的结算", en: "Sign in to view my settlements" },
+  "settlement.guestC2aTitle": { zh: "双轨计费模型", en: "Dual-track billing" },
+  "settlement.guestC2aDesc": { zh: "人类路径用 Order 结算、计价 CNY；Agent（A2A/MCP）路径用 Transaction 结算、计价 UT（Utility Token）。两条链路独立对账，互不串账。", en: "The Human path settles via Order, priced in CNY; the Agent path (A2A/MCP) settles via Transaction, priced in UT (Utility Token). The two rails reconcile independently." },
+  "settlement.guestWalletTitle": { zh: "双币种钱包", en: "Dual-currency wallets" },
+  "settlement.guestWalletDesc": { zh: "每个账户拥有 CNY 与 UT 两个钱包，分别承接人类派单和 Agent 调用的收支，支持充值、消费、退款与提现。", en: "Every account holds a CNY wallet and a UT wallet, covering Human orders and Agent calls respectively — with top-up, spend, refund and withdrawal." },
+  "settlement.guestFlowTitle": { zh: "结算触发时机", en: "When settlement triggers" },
+  "settlement.guestFlowDesc": { zh: "任务在派发→执行→验收→完成的状态流转中，验收通过即自动生成一条结算记录，写入对应币种钱包并归档流水，无需手动开票。", en: "As a task moves through dispatch → execution → review → done, passing review auto-generates a settlement record into the matching wallet and archives the ledger — no manual invoicing." },
+  "settlement.guestModelTitle": { zh: "三种计费模型", en: "Three pricing models" },
+  "settlement.guestModelSalary": { zh: "月薪制（salary）：按月固定结算，适合长期驻场分身。", en: "Salary: fixed monthly settlement, for long-stationed twins." },
+  "settlement.guestModelPerTask": { zh: "计件制（per_task）：按交付任务结算，验收一个结一个。", en: "Per-task: settle per delivered task — one pass, one payout." },
+  "settlement.guestModelSub": { zh: "订阅制（subscription）：按周期订阅，额度内随调随用。", en: "Subscription: periodic plan, usage within quota." },
+  "settlement.guestReconTitle": { zh: "对账与审计", en: "Reconciliation & audit" },
+  "settlement.guestReconDesc": { zh: "每笔结算带幂等键与调用方类型，支持按合同、按计费模型、按币种聚合对账；关键操作留审计日志，便于追溯。", en: "Every record carries an idempotency key and caller type, and can be aggregated by contract, model or currency for reconciliation. Key actions are audit-logged for traceability." },
 
   // ---- Developer ----
   "developer.title": { zh: "开发者中心", en: "Developer" },
@@ -430,6 +472,16 @@ const dict: Dict = {
   "lang.zh": { zh: "中文", en: "中文" },
   "lang.en": { zh: "English", en: "English" },
   "lang.label": { zh: "语言", en: "Language" },
+
+  // ---- SliderCaptcha（滑动拼图验证码）----
+  "captcha.title": { zh: "向右滑动完成验证", en: "Slide to verify" },
+  "captcha.hint": { zh: "拖动下方滑块完成拼图", en: "Drag the slider to complete the puzzle" },
+  "captcha.success": { zh: "验证成功", en: "Verified" },
+  "captcha.fail": { zh: "验证失败，请重试", en: "Verification failed, try again" },
+  "captcha.loading": { zh: "正在加载验证码…", en: "Loading captcha…" },
+  "captcha.loadFailed": { zh: "验证码加载失败，请刷新重试", en: "Failed to load captcha, please retry" },
+  "captcha.refresh": { zh: "换一张", en: "Refresh" },
+  "captcha.rateLimited": { zh: "请求过于频繁，请稍后再试", en: "Too many requests, try again later" },
 };
 
 // ---------- Context ----------

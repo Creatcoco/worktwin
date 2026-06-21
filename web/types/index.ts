@@ -157,7 +157,21 @@ export interface TaskOrder {
   assignerName: string;
   assigneeEmployeeId: string;
   assigneeName: string;
+  /** 一句话需求摘要（向后兼容，现在用 role 替代） */
   brief: string;
+  // ---- 招聘 JD 格式需求 ----
+  /** 岗位标题，如「资深文案撰写」 */
+  role: string;
+  /** 岗位职责（多行文本） */
+  responsibilities: string;
+  /** 任职要求/技能（多行文本） */
+  requirements: string;
+  /** 交付标准/交付物（多行文本） */
+  deliverables: string;
+  /** 预算（CNY），0 表示按合同计费 */
+  budget: number;
+  /** 技能标签 */
+  skillTags: string[];
   priority: 'low' | 'normal' | 'high';
   deadline: number;
   status: TaskStatus;

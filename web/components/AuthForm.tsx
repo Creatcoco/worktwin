@@ -1,11 +1,14 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useState, type FormEvent, type MouseEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
 import { useProductData } from "@/lib/product-data";
+import SliderCaptcha from "@/components/SliderCaptcha";
+
+type Captcha = { token: string; x: number } | null;
 
 export default function AuthForm({ mode }: { mode: "login" | "register" }) {
   const router = useRouter();
@@ -17,15 +20,35 @@ export default function AuthForm({ mode }: { mode: "login" | "register" }) {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [accepted, setAccepted] = useState(false);
+  const [captcha, setCaptcha] = useState<Captcha>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [info, setInfo] = useState("");
 
   const isRegister = mode === "register";
+
+  const readNextPath = () => {
+    const requested = new URLSearchParams(window.location.search).get("next");
+    return requested?.startsWith("/") && !requested.startsWith("//") ? requested : "";
+  };
+
+  const switchMode = (event: MouseEvent<HTMLAnchorElement>) => {
+    const nextPath = readNextPath();
+    if (!nextPath) return;
+    event.preventDefault();
+    router.push(`${isRegister ? "/login" : "/register"}?next=${encodeURIComponent(nextPath)}`);
+  };
+
   const submit = async (event: FormEvent) => {
     event.preventDefault();
     setError("");
+    setInfo("");
     if (isRegister && !accepted) {
       setError(lang === "zh" ? "请先同意服务条款和隐私政策" : "Please accept the terms and privacy policy");
+      return;
+    }
+    if (!captcha) {
+      setError(lang === "zh" ? "请先完成滑块验证" : "Please complete the slider verification");
       return;
     }
 
@@ -34,19 +57,24 @@ export default function AuthForm({ mode }: { mode: "login" | "register" }) {
       const response = await fetch(`/api/auth/${mode}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify({ name, email, password, captchaToken: captcha.token, captchaX: captcha.x }),
       });
-      const payload = (await response.json()) as { message?: string };
+      const payload = (await response.json()) as { message?: string; mode?: string };
       if (!response.ok) {
         setError(payload.message || (lang === "zh" ? "操作失败，请稍后重试" : "Something went wrong"));
+        // 验证码失效（一次性）后需重新拖一次
+        setCaptcha(null);
         return;
+      }
+
+      // 注册接口在邮箱已存在时会返回 mode:"signin"（已自动登录），给用户一个提示
+      if (payload.mode === "signin") {
+        setInfo(lang === "zh" ? "该邮箱已注册，已为您自动登录" : "Account exists; signed you in");
       }
 
       await refresh();
       await refreshProductData();
-      const requested = new URLSearchParams(window.location.search).get("next");
-      const target = requested?.startsWith("/") && !requested.startsWith("//") ? requested : "/dashboard";
-      router.push(target);
+      router.push(readNextPath() || "/dashboard");
       router.refresh();
     } catch {
       setError(lang === "zh" ? "网络异常，请稍后重试" : "Network error. Try again later.");
@@ -99,11 +127,18 @@ export default function AuthForm({ mode }: { mode: "login" | "register" }) {
             <span>{lang === "zh" ? "我同意服务条款和隐私政策。" : "I agree to the Terms and Privacy Policy."}</span>
           </label>
         )}
+
+        {/* 滑动拼图验证码 */}
+        <SliderCaptcha
+          onVerified={(token, x) => setCaptcha({ token, x })}
+          onReset={() => setCaptcha(null)}
+        />
       </div>
 
       {error && <div className="mt-4 rounded-lg border border-[rgba(248,113,113,0.3)] bg-[rgba(248,113,113,0.08)] p-3 text-xs text-[var(--color-danger)]">{error}</div>}
+      {info && <div className="mt-4 rounded-lg border border-[rgba(52,211,153,0.3)] bg-[rgba(52,211,153,0.08)] p-3 text-xs text-[var(--color-success)]">{info}</div>}
 
-      <button type="submit" disabled={loading} className="btn-glow w-full mt-6 py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-50">
+      <button type="submit" disabled={loading || !captcha} className="btn-glow w-full mt-6 py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-50 disabled:cursor-not-allowed">
         {loading
           ? (lang === "zh" ? "处理中..." : "Processing...")
           : isRegister
@@ -113,7 +148,7 @@ export default function AuthForm({ mode }: { mode: "login" | "register" }) {
 
       <p className="text-center text-xs text-[var(--color-fg-dim)] mt-5">
         {isRegister ? (lang === "zh" ? "已有账号？" : "Already registered?") : (lang === "zh" ? "还没有账号？" : "New to WorkTwin?")}{" "}
-        <Link href={isRegister ? "/login" : "/register"} className="text-[var(--color-primary-soft)] hover:text-[var(--color-fg)]">
+        <Link href={isRegister ? "/login" : "/register"} onClick={switchMode} className="text-[var(--color-primary-soft)] hover:text-[var(--color-fg)]">
           {isRegister ? (lang === "zh" ? "去登录" : "Sign in") : (lang === "zh" ? "免费注册" : "Register")}
         </Link>
       </p>

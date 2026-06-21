@@ -5,8 +5,10 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { store } from "@/lib/store";
 import PageHeader from "@/components/PageHeader";
+import InlineLoginGate from "@/components/InlineLoginGate";
 import { useI18n } from "@/lib/i18n";
 import type { PricingModel } from "@/types";
+import { useAuth } from "@/lib/auth";
 
 export default function EmployeeDetailPage({
   params,
@@ -16,6 +18,7 @@ export default function EmployeeDetailPage({
   const { id } = use(params);
   const router = useRouter();
   const { t, lang } = useI18n();
+  const { user: authUser } = useAuth();
   const employee = store.employees.find((e) => e.id === id);
   const [hireError, setHireError] = useState("");
   const [hired, setHired] = useState(() =>
@@ -57,7 +60,7 @@ export default function EmployeeDetailPage({
     }
   };
 
-  const isOwner = employee.ownerId === store.currentUserId;
+  const isOwner = Boolean(authUser && employee.ownerId === store.currentUserId);
 
   return (
     <div>
@@ -108,14 +111,18 @@ export default function EmployeeDetailPage({
                 <Link href="/studio" className="mt-3 inline-block px-4 py-2 rounded-lg text-xs font-medium bg-[var(--color-surface-2)] hover:bg-[var(--color-primary)] hover:text-white transition-colors">
                   {lang === "zh" ? "管理我的分身" : "Manage my twin"}
                 </Link>
-              ) : hired ? (
+              ) : hired && authUser ? (
                 <Link href="/dispatch" className="mt-3 inline-block px-4 py-2 rounded-lg text-xs font-medium bg-[var(--color-success)] text-white">
                   {t("detail.hired")}
                 </Link>
               ) : (
-                <button onClick={() => void hire()} disabled={employee.status === "offline"} className="btn-glow mt-3 px-4 py-2 rounded-lg text-xs font-medium text-white disabled:opacity-40">
-                  {t("detail.hire")}
-                </button>
+                <InlineLoginGate action={t("detail.hire")} onConfirm={() => void hire()}>
+                  {(handleClick) => (
+                    <button onClick={handleClick} disabled={employee.status === "offline"} className="btn-glow mt-3 px-4 py-2 rounded-lg text-xs font-medium text-white disabled:opacity-40">
+                      {t("detail.hire")}
+                    </button>
+                  )}
+                </InlineLoginGate>
               )}
               {hireError && <p className="mt-2 max-w-48 text-xs text-[var(--color-danger)]">{hireError}</p>}
             </div>
