@@ -21,9 +21,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ message: "邮箱或密码不正确" }, { status: 401 });
   }
 
-  // 单人频控：1 分钟 1 次（匿名用 IP）
+  // 验证码已承担机器人拦截；保留合理的分钟级尝试上限，避免误伤正常重试。
   const { key } = resolveRateLimitKey(request);
-  const limit = checkRateLimit(`login:${key}`);
+  const limit = checkRateLimit(`login:${key}`, 10);
   if (!limit.allowed) {
     return NextResponse.json(
       { message: `请求过于频繁，请 ${limit.retryAfterSeconds} 秒后再试` },

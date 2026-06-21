@@ -19,7 +19,7 @@ export default function AuthMenu() {
           {lang === "zh" ? "登录" : "Sign in"}
         </Link>
         <Link href="/register" className="btn-glow px-4 py-2 rounded-lg text-sm font-medium text-white">
-          {lang === "zh" ? "免费注册" : "Register"}
+          {lang === "zh" ? "注册领 50 UT" : "Get 50 UT"}
         </Link>
       </div>
     );

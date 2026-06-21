@@ -33,7 +33,7 @@ export default function GuestModeBanner() {
             {lang === "zh" ? "登录" : "Sign in"}
           </Link>
           <Link href={`/register?next=${next}`} className="px-3 py-1.5 rounded-md bg-[var(--color-primary)] text-xs font-medium text-white hover:brightness-110 transition">
-            {lang === "zh" ? "免费注册" : "Create account"}
+            {lang === "zh" ? "注册领 50 UT" : "Get 50 UT"}
           </Link>
         </div>
       </div>

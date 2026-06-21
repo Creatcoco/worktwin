@@ -53,8 +53,8 @@ export function ProductDataProvider({ children }: { children: ReactNode }) {
       forceNext(BOOTSTRAP_URL);
       const payload = await throttledGet<ProductSnapshot>(BOOTSTRAP_URL, { enabled: false });
       if (!payload) {
-        // 429 或网络异常：保留现有 store 数据，不报错
-        return true;
+        setError("无法读取飞书中的真实业务数据，请稍后重试");
+        return false;
       }
       store.hydrateRemoteSnapshot(payload);
       return true;
@@ -74,14 +74,15 @@ export function ProductDataProvider({ children }: { children: ReactNode }) {
       if (snapshot) {
         store.hydrateRemoteSnapshot(snapshot);
         setError("");
+      } else if (user) {
+        setError("无法读取飞书中的真实业务数据，请稍后重试");
       }
-      // snapshot 为 undefined（429/网络异常）时保留现有数据，不报错降级
       setLoading(false);
     });
     return () => {
       active = false;
     };
-  }, [authLoading, user?.id]);
+  }, [authLoading, user]);
 
   const value = useMemo(() => ({ loading, error, refresh }), [loading, error, refresh]);
   return <ProductDataContext.Provider value={value}>{children}</ProductDataContext.Provider>;

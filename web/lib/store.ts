@@ -441,8 +441,8 @@ class Store {
         email: input.email,
         avatar: '👤',
         apiKey: '',
-        balanceCNY: 1000,
-        balanceUT: 50,
+        balanceCNY: 0,
+        balanceUT: 0,
         createdAt: this.nowSeconds(),
       };
       this.users.push(user);
@@ -451,6 +451,10 @@ class Store {
       user.email = input.email;
     }
     this.currentUserId = input.id;
+    this.contracts = [];
+    this.tasks = [];
+    this.settlements = [];
+    this.drafts = [];
     return user;
   }
 

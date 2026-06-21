@@ -10,7 +10,7 @@ import {
 } from "@/lib/server/auth-security";
 import { verifyCaptcha } from "@/lib/server/captcha-store";
 import { createUser, findUserByEmail, updateLastLogin } from "@/lib/server/feishu-users";
-import { saveWallet } from "@/lib/server/feishu-product-repository";
+import { appendAuditLog, saveWallet } from "@/lib/server/feishu-product-repository";
 import { checkRateLimit, RATE_LIMIT_WINDOW_SECONDS, resolveRateLimitKey } from "@/lib/server/rate-limit";
 
 export const runtime = "nodejs";
@@ -34,9 +34,9 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // 单人频控：1 分钟 1 次（匿名用 IP）
+  // 注册仍受一次性验证码保护，允许用户修正输入后立即重试。
   const { key } = resolveRateLimitKey(request);
-  const limit = checkRateLimit(`register:${key}`);
+  const limit = checkRateLimit(`register:${key}`, 5);
   if (!limit.allowed) {
     return NextResponse.json(
       { message: `请求过于频繁，请 ${limit.retryAfterSeconds} 秒后再试` },
@@ -92,12 +92,28 @@ export async function POST(request: NextRequest) {
       name: user.name,
       avatar: "👤",
       apiKey: "",
-      balanceCNY: 1000,
+      balanceCNY: 0,
       balanceUT: 50,
       createdAt: Math.floor(user.createdAt / 1000),
     });
+    try {
+      await appendAuditLog({
+        id: `audit_signup_bonus_${user.userId}`,
+        userId: user.userId,
+        action: "signup_bonus_granted",
+        resourceType: "wallet",
+        resourceId: `wallet_${user.userId}`,
+        metadata: { amount: 50, currency: "UT", campaign: "new_user_signup" },
+      });
+    } catch {
+      // 钱包是余额真值；审计表暂时不可用不应阻断注册。
+    }
     const response = NextResponse.json(
-      { mode: "signup", user: { id: user.userId, email: user.email, name: user.name, role: user.role } },
+      {
+        mode: "signup",
+        bonusUT: 50,
+        user: { id: user.userId, email: user.email, name: user.name, role: user.role },
+      },
       { status: 201 }
     );
     setSession(response, { userId: user.userId, email: user.email, name: user.name, role: user.role });

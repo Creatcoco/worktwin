@@ -54,6 +54,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await fetch("/api/auth/logout", { method: "POST" });
     setUser(null);
     invalidate(ME_URL); // 退出后清缓存，下次读取拿最新（未登录）状态
+    invalidate("/api/data/bootstrap");
+    store.reset();
   }, []);
 
   useEffect(() => {

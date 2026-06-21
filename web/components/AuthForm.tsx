@@ -59,7 +59,7 @@ export default function AuthForm({ mode }: { mode: "login" | "register" }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, email, password, captchaToken: captcha.token, captchaX: captcha.x }),
       });
-      const payload = (await response.json()) as { message?: string; mode?: string };
+      const payload = (await response.json()) as { message?: string; mode?: string; bonusUT?: number };
       if (!response.ok) {
         setError(payload.message || (lang === "zh" ? "操作失败，请稍后重试" : "Something went wrong"));
         // 验证码失效（一次性）后需重新拖一次
@@ -94,9 +94,15 @@ export default function AuthForm({ mode }: { mode: "login" | "register" }) {
           </div>
         </div>
         <h1 className="text-2xl font-bold">{isRegister ? (lang === "zh" ? "创建账号" : "Create account") : (lang === "zh" ? "欢迎回来" : "Welcome back")}</h1>
+        {isRegister && (
+          <div className="mt-3 inline-flex items-center gap-2 rounded-md border border-[rgba(52,211,153,0.28)] bg-[rgba(52,211,153,0.08)] px-3 py-2 text-xs text-[var(--color-success)]">
+            <span className="font-bold">50 UT</span>
+            <span>{lang === "zh" ? "注册即到账，可用于首次雇佣与派单" : "Credited at signup for your first hire and dispatch"}</span>
+          </div>
+        )}
         <p className="text-sm text-[var(--color-fg-muted)] mt-2">
           {isRegister
-            ? (lang === "zh" ? "注册后即可接入并上架你的工作分身。" : "Connect and list your work twins after registering.")
+            ? (lang === "zh" ? "完成注册后，奖励将写入你的真实账户钱包。" : "Your reward is written to your real account wallet after signup.")
             : (lang === "zh" ? "登录后管理分身、任务与结算。" : "Manage twins, tasks and settlements.")}
         </p>
       </div>
@@ -142,14 +148,14 @@ export default function AuthForm({ mode }: { mode: "login" | "register" }) {
         {loading
           ? (lang === "zh" ? "处理中..." : "Processing...")
           : isRegister
-            ? (lang === "zh" ? "注册并进入工作台" : "Create account")
+            ? (lang === "zh" ? "注册并领取 50 UT" : "Create account and claim 50 UT")
             : (lang === "zh" ? "登录" : "Sign in")}
       </button>
 
       <p className="text-center text-xs text-[var(--color-fg-dim)] mt-5">
         {isRegister ? (lang === "zh" ? "已有账号？" : "Already registered?") : (lang === "zh" ? "还没有账号？" : "New to WorkTwin?")}{" "}
         <Link href={isRegister ? "/login" : "/register"} onClick={switchMode} className="text-[var(--color-primary-soft)] hover:text-[var(--color-fg)]">
-          {isRegister ? (lang === "zh" ? "去登录" : "Sign in") : (lang === "zh" ? "免费注册" : "Register")}
+          {isRegister ? (lang === "zh" ? "去登录" : "Sign in") : (lang === "zh" ? "免费注册领 50 UT" : "Register for 50 UT")}
         </Link>
       </p>
     </form>
